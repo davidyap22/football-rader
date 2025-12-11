@@ -72,6 +72,7 @@ export function useMarketData(matchId = '', fallbackHome?: string, fallbackAway?
     queryKey: ['handicap', matchId],
     queryFn: () => fetchMarketRows<HandicapData>('handicap', matchId),
     enabled: Boolean(matchId),
+    refetchInterval: 10000,
   });
 
   const {
@@ -82,6 +83,7 @@ export function useMarketData(matchId = '', fallbackHome?: string, fallbackAway?
     queryKey: ['overunder', matchId],
     queryFn: () => fetchMarketRows<OverUnderData>('total_points', matchId),
     enabled: Boolean(matchId),
+    refetchInterval: 10000,
   });
 
   const {
@@ -92,6 +94,7 @@ export function useMarketData(matchId = '', fallbackHome?: string, fallbackAway?
     queryKey: ['moneyline', matchId],
     queryFn: () => fetchMarketRows<MoneylineData>('moneyline 1x2', matchId),
     enabled: Boolean(matchId),
+    refetchInterval: 10000,
   });
 
   const isRefreshing = isFetchingHandicap || isFetchingOverUnder || isFetchingMoneyline;
