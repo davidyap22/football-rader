@@ -5,13 +5,13 @@ import { SignalTimeline } from '@/components/SignalTimeline';
 import { RefreshButton } from '@/components/RefreshButton';
 import { FootballBackground } from '@/components/FootballBackground';
 import { useMarketData } from '@/hooks/useMarketData';
-import { useMatchList } from '@/hooks/useMatchList';
+import { useMatchList, ALLOWED_MATCH_IDS } from '@/hooks/useMatchList';
 import { useEffect, useMemo, useState } from 'react';
 
 const Index = () => {
-  // 如需按 ai_prompt 过滤可改成字符串值，例如 '5.1'；默认不过滤，避免空数据
-  const aiPrompt = "5.1";
-  const { data: matches = [], error: matchListError } = useMatchList(aiPrompt);
+  // 不过滤 ai_prompt，避免因字段不存在导致无数据；如需可改成具体字符串
+  const aiPrompt = undefined;
+  const { data: matches = [], error: matchListError } = useMatchList();
   const [selectedMatchId, setSelectedMatchId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
@@ -20,7 +20,8 @@ const Index = () => {
     }
   }, [matches, selectedMatchId]);
 
-  const effectiveMatchId = selectedMatchId || matches[0]?.match_id || '20251206270DF25D';
+  const effectiveMatchId = selectedMatchId || matches[0]?.match_id || ALLOWED_MATCH_IDS[0] || '20251206270DF25D';
+  const selectedMatch = matches.find((m) => m.match_id === effectiveMatchId);
 
   const {
     activeTab,
@@ -34,7 +35,11 @@ const Index = () => {
     refresh,
     isRefreshing,
     errors,
-  } = useMarketData(effectiveMatchId, aiPrompt);
+  } = useMarketData(
+    effectiveMatchId,
+    selectedMatch?.home_team,
+    selectedMatch?.away_team
+  );
 
   const matchOptions = useMemo(() => matches.map((m) => ({
     value: m.match_id,
@@ -67,9 +72,11 @@ const Index = () => {
           </div>
           <div className="flex items-center gap-2">
             {matchListError && (
-              <span className="text-xs text-red-400">比赛列表读取失败</span>
+              <span className="text-xs text-red-400">
+                比赛列表读取失败（查看控制台日志）
+              </span>
             )}
-            {(errors.handicap || errors.overunder || errors.moneyline) && (
+            {errors.fast && (
               <span className="text-xs text-red-400">
                 数据读取出错，检查 Supabase 权限或表名
               </span>
@@ -102,6 +109,7 @@ const Index = () => {
         <RadarSignal
           signal={currentSignal.signal}
           stakingPlan={currentSignal.stakingPlan}
+          oddsSummary={currentSignal.oddsSummary}
         />
 
         {/* Market Tabs */}

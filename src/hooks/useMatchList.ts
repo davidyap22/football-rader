@@ -1,99 +1,83 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabaseClient';
 
+// 仅展示这 5 场
+export const ALLOWED_MATCH_IDS = [
+  '20251211025F8B30',
+  '20251211FFD954EB',
+  '20251211D655FFF3',
+  '20251211723AF715',
+  '202512111EDA2EFA',
+] as const;
+
 interface MatchItem {
   match_id: string;
-  last_clock: number;
-  last_created_at?: string;
   home_team?: string;
   away_team?: string;
 }
 
-async function fetchMatches(aiPrompt?: string): Promise<MatchItem[]> {
-  const sevenDaysAgoDate = new Date();
-  sevenDaysAgoDate.setDate(sevenDaysAgoDate.getDate() - 7);
-  sevenDaysAgoDate.setUTCHours(0, 0, 0, 0);
-  const sevenDaysAgoTs = sevenDaysAgoDate.getTime();
-  const sevenDaysAgoIso = sevenDaysAgoDate.toISOString();
+type TableSource = 'handicap' | 'total_points' | 'moneyline 1x2' | 'odds_fast_history';
 
-  const tables = ['handicap', 'total_points', 'moneyline 1x2'] as const;
+const TABLES: TableSource[] = ['handicap', 'total_points', 'moneyline 1x2', 'odds_fast_history'];
 
-  const fetchTable = async (table: (typeof tables)[number], applyDateFilter: boolean) => {
-    // moneyline 1x2 可能没有 home_team/away_team，使用不同的列选择避免报错
-    const selectColumns =
-      table === 'moneyline 1x2'
-        ? 'match_id, clock, created_at, ai_prompt'
-        : 'match_id, clock, created_at, home_team, away_team, ai_prompt';
+const selectByTable: Record<TableSource, string[]> = {
+  handicap: ['match_id, home_team, away_team'],
+  total_points: ['match_id, home_team, away_team'],
+  'moneyline 1x2': ['match_id, home_team, away_team', 'match_id'], // moneyline 表可能缺主客队
+  odds_fast_history: ['match_id, home_team, away_team'],
+};
 
-    const tableName = table === 'moneyline 1x2' ? '"moneyline 1x2"' : table;
-
-    let q = supabase
-      .from(tableName)
-      .select(selectColumns)
-      .order('created_at', { ascending: false })
-      .limit(500);
-
-    if (applyDateFilter) {
-      q = q.gte('created_at', sevenDaysAgoIso);
-    }
-
-    const { data, error } = await q;
-    if (error) throw error;
-    return data || [];
-  };
-
-  // 先尝试 7 天窗口，若所有表无数据，再放宽时间
-  let data: any[] = [];
-  for (const table of tables) {
-    const rows = await fetchTable(table, true);
-    data.push(...rows);
-  }
-  if (!data.length) {
-    for (const table of tables) {
-      const rows = await fetchTable(table, false);
-      data.push(...rows);
+async function fetchTable(table: TableSource) {
+  const candidates = table === 'moneyline 1x2' ? ['"moneyline 1x2"', 'moneyline 1x2'] : [table];
+  for (const name of candidates) {
+    for (const select of selectByTable[table]) {
+      const { data, error } = await supabase
+        .from(name)
+        .select(select)
+        .in('match_id', ALLOWED_MATCH_IDS as unknown as string[])
+        .limit(500);
+      if (error) continue;
+      if (data) return data;
     }
   }
-
-  const filterByTime = (row: any) => {
-    const ts = Date.parse(row.created_at || '');
-    if (Number.isNaN(ts)) return true;
-    return ts >= sevenDaysAgoTs;
-  };
-
-  const applyFilter = (rows: any[]) =>
-    rows.filter((row) => {
-      if (aiPrompt && row.ai_prompt !== aiPrompt) return false;
-      return filterByTime(row);
-    });
-
-  let rows = applyFilter(data);
-  // 若按 ai_prompt 过滤后为空，则放宽 ai_prompt
-  if (!rows.length && aiPrompt) {
-    rows = data.filter(filterByTime);
-  }
-
-  const grouped: Record<string, MatchItem> = {};
-  rows.forEach((row) => {
-    const clockNum = Number(row.clock || 0);
-    const existing = grouped[row.match_id];
-    if (!existing || clockNum > existing.last_clock) {
-      grouped[row.match_id] = {
-        match_id: row.match_id,
-        last_clock: clockNum,
-        last_created_at: row.created_at ?? undefined,
-        home_team: row.home_team ?? existing?.home_team ?? undefined,
-        away_team: row.away_team ?? existing?.away_team ?? undefined,
-      };
-    }
-  });
-
-  return Object.values(grouped).sort((a, b) => b.last_clock - a.last_clock);
+  return [];
 }
 
-export function useMatchList(aiPrompt?: string) {
+async function fetchMatches(): Promise<MatchItem[]> {
+  const grouped: Record<string, MatchItem> = {};
+
+  for (const table of TABLES) {
+    const rows = await fetchTable(table);
+    (rows || []).forEach((row: any) => {
+      if (!row.match_id || !ALLOWED_MATCH_IDS.includes(row.match_id)) return;
+      const existing = grouped[row.match_id];
+      if (!existing) {
+        grouped[row.match_id] = {
+          match_id: row.match_id,
+          home_team: row.home_team ?? undefined,
+          away_team: row.away_team ?? undefined,
+        };
+      } else {
+        grouped[row.match_id] = {
+          match_id: row.match_id,
+          home_team: existing.home_team || row.home_team || undefined,
+          away_team: existing.away_team || row.away_team || undefined,
+        };
+      }
+    });
+  }
+
+  // 按固定顺序返回
+  return ALLOWED_MATCH_IDS.map((id) => ({
+    match_id: id,
+    home_team: grouped[id]?.home_team,
+    away_team: grouped[id]?.away_team,
+  }));
+}
+
+export function useMatchList() {
   return useQuery({
-    queryKey: ['match-list', aiPrompt],
-    queryFn: () => fetchMatches(aiPrompt),
+    queryKey: ['match-list'],
+    queryFn: () => fetchMatches(),
   });
 }

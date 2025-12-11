@@ -5,9 +5,10 @@ import { Radio } from 'lucide-react';
 interface RadarSignalProps {
   signal: string;
   stakingPlan: string;
+  oddsSummary?: string;
 }
 
-export function RadarSignal({ signal, stakingPlan }: RadarSignalProps) {
+export function RadarSignal({ signal, stakingPlan, oddsSummary }: RadarSignalProps) {
   const signalType = getSignalType(signal);
   const colors = getSignalColors(signalType);
   const { emoji, text } = parseSignalText(signal);
@@ -49,6 +50,13 @@ export function RadarSignal({ signal, stakingPlan }: RadarSignalProps) {
                 <span className="font-mono text-sm font-semibold text-primary">
                   {stakingPlan}
                 </span>
+              </div>
+            )}
+
+            {oddsSummary && (
+              <div className="flex items-center gap-2 pt-1">
+                <span className="text-xs text-muted-foreground">Market:</span>
+                <span className="font-mono text-sm text-foreground">{oddsSummary}</span>
               </div>
             )}
           </>

@@ -7,6 +7,8 @@ interface TimelineItem {
   clock: string;
   score: string;
   signal: string;
+  oddsSummary?: string;
+  staking_plan?: string;
 }
 
 interface SignalTimelineProps {
@@ -40,7 +42,7 @@ export function SignalTimeline({ history }: SignalTimelineProps) {
                 colors.border,
                 index === 0 && 'ring-1 ring-border'
               )}
-            >
+              >
               {/* Clock Badge */}
               <div className="shrink-0 bg-muted px-2 py-1 rounded text-center min-w-[40px]">
                 <span className="font-mono text-sm font-bold text-foreground">{item.clock}'</span>
@@ -57,6 +59,16 @@ export function SignalTimeline({ history }: SignalTimelineProps) {
                 <p className="text-xs text-muted-foreground mt-1">
                   Score: <span className="font-mono">{item.score}</span>
                 </p>
+                {item.oddsSummary && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    <span className="font-mono">{item.oddsSummary}</span>
+                  </p>
+                )}
+                {item.staking_plan && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Staking: <span className="font-mono">{item.staking_plan}</span>
+                  </p>
+                )}
               </div>
             </div>
           );
