@@ -1,0 +1,143 @@
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 95%;
+
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 45 100% 50%;
+    --primary-foreground: 0 0% 5%;
+
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 55%;
+
+    --accent: 190 100% 50%;
+    --accent-foreground: 0 0% 5%;
+
+    --destructive: 0 85% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 18%;
+    --input: 0 0% 12%;
+    --ring: 45 100% 50%;
+
+    --radius: 0.75rem;
+
+    /* Signal Colors - Vibrant */
+    --signal-entry: 145 85% 45%;
+    --signal-entry-bg: 145 70% 10%;
+    --signal-fire: 15 95% 55%;
+    --signal-fire-bg: 15 80% 10%;
+    --signal-wait: 45 100% 55%;
+    --signal-wait-bg: 45 90% 10%;
+    --signal-hold: 210 100% 60%;
+    --signal-hold-bg: 210 80% 10%;
+
+    /* Odds Colors */
+    --odds: 45 100% 55%;
+    --odds-up: 145 85% 50%;
+    --odds-down: 0 85% 55%;
+
+    /* Live Indicator */
+    --live: 0 85% 55%;
+
+    /* Interactive Glow Colors */
+    --glow-yellow: 45 100% 50%;
+    --glow-red: 0 85% 55%;
+    --glow-blue: 210 100% 55%;
+    --glow-cyan: 190 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .font-mono {
+    font-family: 'Courier Prime', monospace;
+  }
+}
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+  }
+
+  @keyframes pulse-live {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  @keyframes signal-glow {
+    0%, 100% { box-shadow: 0 0 20px hsl(var(--signal-entry) / 0.3); }
+    50% { box-shadow: 0 0 40px hsl(var(--signal-entry) / 0.5); }
+  }
+
+  @keyframes signal-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes glow-shift {
+    0% { filter: drop-shadow(0 0 8px hsl(var(--glow-yellow))); }
+    25% { filter: drop-shadow(0 0 12px hsl(var(--glow-red))); }
+    50% { filter: drop-shadow(0 0 8px hsl(var(--glow-blue))); }
+    75% { filter: drop-shadow(0 0 12px hsl(var(--glow-cyan))); }
+    100% { filter: drop-shadow(0 0 8px hsl(var(--glow-yellow))); }
+  }
+
+  @keyframes border-glow {
+    0% { border-color: hsl(var(--glow-yellow) / 0.6); box-shadow: 0 0 15px hsl(var(--glow-yellow) / 0.4), inset 0 0 10px hsl(var(--glow-yellow) / 0.1); }
+    25% { border-color: hsl(var(--glow-red) / 0.6); box-shadow: 0 0 20px hsl(var(--glow-red) / 0.4), inset 0 0 10px hsl(var(--glow-red) / 0.1); }
+    50% { border-color: hsl(var(--glow-blue) / 0.6); box-shadow: 0 0 15px hsl(var(--glow-blue) / 0.4), inset 0 0 10px hsl(var(--glow-blue) / 0.1); }
+    75% { border-color: hsl(var(--glow-cyan) / 0.6); box-shadow: 0 0 20px hsl(var(--glow-cyan) / 0.4), inset 0 0 10px hsl(var(--glow-cyan) / 0.1); }
+    100% { border-color: hsl(var(--glow-yellow) / 0.6); box-shadow: 0 0 15px hsl(var(--glow-yellow) / 0.4), inset 0 0 10px hsl(var(--glow-yellow) / 0.1); }
+  }
+
+  .animate-pulse-live {
+    animation: pulse-live 1.5s ease-in-out infinite;
+  }
+
+  .animate-signal-glow {
+    animation: signal-glow 2s ease-in-out infinite;
+  }
+
+  .animate-signal-pulse {
+    animation: signal-pulse 0.3s ease-out;
+  }
+
+  /* Interactive Glow Cards */
+  .glow-card {
+    @apply border border-border/30 transition-all duration-300;
+  }
+
+  .glow-card:hover,
+  .glow-card:active {
+    animation: border-glow 3s linear infinite;
+  }
+
+  .glow-icon:hover,
+  .glow-icon:active {
+    animation: glow-shift 2s linear infinite;
+  }
+}
