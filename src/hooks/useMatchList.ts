@@ -3,11 +3,10 @@ import { supabase } from '@/lib/supabaseClient';
 
 // 仅展示这 5 场
 export const ALLOWED_MATCH_IDS = [
-  '20251211025F8B30',
-  '20251211FFD954EB',
-  '20251211D655FFF3',
-  '20251211723AF715',
-  '202512111EDA2EFA',
+  '20251212C6D055BD',
+  '2025121273F1C480',
+  '2025121224386B6D',
+  '202512123D857ECD',
 ] as const;
 
 interface MatchItem {
